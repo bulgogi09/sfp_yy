@@ -1,8 +1,31 @@
 import streamlit as st
 import requests
 
-# ===== API Keys =====
+# ===== API Key =====
 SPOONACULAR_API_KEY = "e6cf5cb8b84b49ecbe59feed47e7dc8c"
+
+# ===== Background Image Function =====
+def set_background(image_url, text_color="white"):
+    st.markdown(
+        f"""
+        <style>
+        .stApp {{
+            background-image: url('{image_url}');
+            background-size: cover;
+            background-attachment: fixed;
+        }}
+        .content-container {{
+            background-color: rgba(255, 255, 255, 0.85);
+            padding: 2em;
+            border-radius: 15px;
+        }}
+        h1, h2, h3, h4, h5, h6, p, span, div {{
+            color: {text_color};
+        }}
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ===== Spoonacular Food Suggestion Function =====
 def get_food_ideas(craving, max_calories):
@@ -42,31 +65,52 @@ def get_dummy_restaurants(craving, location):
     return [{"name": "Local Bites", "address": f"Center St, {location}", "rating": 4.0}]
 
 # ===== Streamlit App UI =====
-st.title("🍽️ What Should I Eat? (With Dummy Restaurant Suggestions)")
+st.set_page_config(page_title="What To Eat App", page_icon="🍽️", layout="centered")
+
+# Set initial background
+opening_background = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c"
+set_background(opening_background, text_color="white")
+
+st.markdown("""
+    <div class='content-container'>
+        <h1 style='text-align: center;'>🍽️ What Should I Eat?</h1>
+        <p style='text-align: center;'>Find meals and restaurant ideas based on your cravings and budget.</p>
+    </div>
+""", unsafe_allow_html=True)
 
 # --- User Inputs ---
-location = st.text_input("📍 Your Location")
-budget = st.number_input("💰 Your Budget", min_value=1)
-currency = st.text_input("💱 Your Currency Symbol (e.g., $, €, ₹, RM)", value="$")
-craving = st.text_input("😋 What are you craving?")
-calories = st.number_input("🔥 Max Calories", min_value=100, max_value=2000, step=50)
+st.markdown("<div class='content-container'><h2>🔎 Enter Your Details</h2>", unsafe_allow_html=True)
+with st.form("user_inputs"):
+    location = st.text_input("📍 Your Location")
+    budget = st.number_input("💰 Your Budget", min_value=1)
+    currency = st.text_input("💱 Your Currency Symbol (e.g., $, €, ₹, RM)", value="$")
+    craving = st.text_input("😋 What are you craving?")
+    calories = st.number_input("🔥 Max Calories", min_value=100, max_value=2000, step=50)
+    submitted = st.form_submit_button("🔍 Find Foods")
+st.markdown("</div>", unsafe_allow_html=True)
 
-# --- Button to Search ---
-if st.button("🔍 Find Foods"):
+# --- Results ---
+if submitted:
     if craving and location:
-        st.info("Searching for food options...")
+        # Set new background after search
+        results_background = "https://images.unsplash.com/photo-1504674900247-0877df9cc836"
+        set_background(results_background, text_color="black")
+
+        st.markdown("<div class='content-container'>", unsafe_allow_html=True)
+        st.info("🔎 Searching for food options...")
 
         # ==== Spoonacular Recipes ====
         food_results = get_food_ideas(craving, calories)
         if food_results:
+            st.markdown("### 🧑‍🍳 Recipe Suggestions")
             found = False
             for food in food_results:
                 estimated_price = 10.00  # dummy price for now
 
                 if estimated_price <= budget:
                     found = True
-                    st.subheader(food["title"])
-                    st.image(food["image"])
+                    st.success(food["title"])
+                    st.image(food["image"], use_column_width=True)
                     st.write(f"📍 Location: {location}")
                     st.write(f"💸 Estimated Price: {currency}{estimated_price}")
                     st.write(f"🔥 Calories: {calories} kcal")
@@ -76,26 +120,13 @@ if st.button("🔍 Find Foods"):
                     st.write("---")
 
             if not found:
-                st.warning("No foods found within your budget. Try increasing your budget.")
+                st.warning("🚫 No foods found within your budget. Try increasing your budget.")
         else:
-            st.warning("No results found. Try a different craving or lower calorie limit.")
+            st.warning("🔍 No results found. Try a different craving or lower calorie limit.")
 
         # ==== Dummy Restaurant Suggestions ====
-        st.subheader("🏪 Nearby Restaurant Suggestions")
+        st.markdown("### 🏪 Nearby Restaurant Suggestions")
         restaurants = get_dummy_restaurants(craving, location)
         if restaurants:
             for r in restaurants:
                 st.markdown(f"**{r['name']}**")
-                st.write(f"📍 {r['address']}")
-                st.write(f"⭐ Rating: {r['rating']}")
-                st.write("---")
-        else:
-            st.warning("No nearby restaurants found.")
-    else:
-        st.warning("Please enter both location and craving.")
-
-
-
-
-
-
